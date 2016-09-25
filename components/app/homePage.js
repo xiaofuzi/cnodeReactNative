@@ -17,7 +17,7 @@ import {
 
 import Router from './routes.js';
 import TopicComponent from './topic/topic.js';
-import DetailTopicComponent from './topic/detailTopic.js';
+import DetailTopicComponent from './topic/webTopicDetail.js';
 
 /**
  * actions

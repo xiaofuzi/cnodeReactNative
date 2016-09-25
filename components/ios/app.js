@@ -11,7 +11,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import HomePage from '../app/homePage.js';
 //import MessagePage from '../app/messagePage.js';
-//import personalPage from '../app/personalPage.js';
+import PersonalPage from '../app/personalPage.js';
 
 const styles = StyleSheet.create({
     container: {
@@ -19,7 +19,7 @@ const styles = StyleSheet.create({
     }
 });
 
-const TabBarNames = ['home', 'message', 'personal'];
+const TabBarNames = ['首页', '消息', '个人'];
 
 export default class App extends Component {
     constructor (props) {
@@ -40,7 +40,7 @@ export default class App extends Component {
         return (
             <TabBarIOS selectedTab={selectedTab}>
                 <Icon.TabBarItemIOS
-                    title="Home"
+                    title={TabBarNames[0]}
                     iconName="ios-home-outline"
                     selectedIconName="ios-home"
                     selected={selectedTab === TabBarNames[0]}
@@ -52,7 +52,7 @@ export default class App extends Component {
                     <HomePage style={styles.container} />
                 </Icon.TabBarItemIOS>
                 <Icon.TabBarItemIOS
-                    title="Message"
+                    title={TabBarNames[1]}
                     iconName="ios-home-outline"
                     selectedIconName="ios-home"
                     selected={selectedTab === TabBarNames[1]}
@@ -64,7 +64,7 @@ export default class App extends Component {
                     <HomePage />
                 </Icon.TabBarItemIOS>
                 <Icon.TabBarItemIOS
-                    title="Me"
+                    title={TabBarNames[2]}
                     iconName="ios-person-outline"
                     selectedIconName="ios-person"
                     selected={selectedTab === TabBarNames[2]}
@@ -73,7 +73,7 @@ export default class App extends Component {
                             selectedTab: TabBarNames[2]
                         })
                     }}>
-                    <HomePage />
+                    <PersonalPage />
                 </Icon.TabBarItemIOS>
             </TabBarIOS>
             )

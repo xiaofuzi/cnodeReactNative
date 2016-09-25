@@ -27,6 +27,9 @@ const styles = StyleSheet.create({
     headerContainer: {
         //height: 100
     },
+    webViewStyle: {
+        flex: 1
+    },
     title: {
         fontSize: 20,
         fontWeight: 'bold',
@@ -106,6 +109,7 @@ export default class DetailTopic extends Component {
             <View style={styles.container}>
                 { this.renderHeader(topic) }
                 <WebView
+                    style={styles.webViewStyle}
                     source={{html: topic.content}}></WebView>
             </View>
         )

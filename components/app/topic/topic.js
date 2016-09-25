@@ -17,18 +17,21 @@ import {
 
 import ScrollableTabView, {DefaultTabBar, } from 'react-native-scrollable-tab-view';
 
+import moment from 'moment';
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         marginTop: 65,
-        paddingBottom: 65,
+        paddingBottom: 48,
         backgroundColor: '#ffffff'
     },
     listViewContainer: {
         flex: 1
     },
     emptyContainer: {
-        alignItems: 'center'
+        alignItems: 'center',
+        justifyContent: 'center'
     },
     scrollableTabView: {
     },
@@ -87,6 +90,7 @@ const MAX_LIST = 100;
  * topic types
  */
 const topicTypes = ['all', 'good', 'share', 'job'];
+const topicKeys = ['topics', 'goodTopics', 'shareTopics', 'jobTopics'];
 
 export default class TopicComponent extends Component {
     static propTypes = {
@@ -98,37 +102,10 @@ export default class TopicComponent extends Component {
         super(props);
 
         this.state = {
-            dataSource: [],
-            hasTopic: false,
             isLoading: false,
-            hasRenderList: false,
-            /**
-             * 上拉刷新(true)或下拉刷新(false)
-             */
-            isTopRefresh: null,
-            currentTabName: 'all',
-            currentStoreTabKey: 'topics',
-            currentTabData: {},
-            tabData: {},
-            /**
-             * tab page state
-             */
-            tabParams: {
-                all: {
-                    pageNum: 1
-                },
-                good: {
-                    pageNum: 1
-                },
-                share: {
-                    pageNum: 1
-                },
-                job: {
-                    pageNum: 1
-                }
-            },
-            //for testing
-            count: 1
+            hasTopic: false,
+            currentTabName: 'all',                      //当前tab分类名
+            currentStoreTabKey: 'topics'                //当前tab在store中对应的key
         }
     }
 
@@ -136,23 +113,28 @@ export default class TopicComponent extends Component {
      * instance property
      * 组件当前已加载数据并渲染的数据
      */
-    topicListData = {
+    topicListData = {}
+    topicListDataParam = {
         [topicTypes[0]]: {
-            pageNum: 1,
-            list: []
+            pageNum: 1
         },
         [topicTypes[1]]: {
-            pageNum: 1,
-            list: []
+            pageNum: 1
         },
         [topicTypes[2]]: {
-            pageNum: 1,
-            list: []
+            pageNum: 1
         },
         [topicTypes[3]]: {
-            pageNum: 1,
-            list: []
+            pageNum: 1
         }
+    }
+
+    /**
+     * 状态控制变量
+     */
+    status = {
+        hasRenderList: false,                       //首次接收到列表数据
+        isTopRefresh: null
     }
 
     dataSource = new ListView.DataSource({
@@ -163,65 +145,148 @@ export default class TopicComponent extends Component {
      * @private
      * data init
      */
-    initRowData (data) {
-        let dataSource = new ListView.DataSource(
-            {rowHasChanged : (r1, r2)=>r1.id != r2.id}
-            );
+    initListData (props) {
         let topicData, hasTopic = false;
-        if (data.status === 'success') {
 
-            topicData = data.data;  
-            hasTopic = true;      
-        }else {
-            topicData = [];
+        topicData = this.topicListData[this.state.currentStoreTabKey].data;
+        if (topicData[0]) {
+            hasTopic = true;
         }
         this.setState({
-            dataSource: dataSource.cloneWithRows(topicData),
-            hasTopic,
-            topicData,
-            currentTabData: data,
-            hasRenderList: true,
-            isLoading: data.status === 'fetching' ? true : false
+            dataSource: this.dataSource.cloneWithRows(topicData),
+            hasTopic
         });
-        console.log('state: ', this.state);
+    }
+
+    /**
+     * 更新列表数据
+     * @param {boolean} top or bottom 
+     * @param {object} topic store
+     */
+    updateListData (bool, listData) {
+        let tabKey = this.state.currentStoreTabKey;
+        let tabData = [];
+
+        console.log('listData', listData, tabKey);
+        if (!listData[tabKey].data.length) return ;
+
+        /**
+         * prepend data
+         */
+        if (bool) {
+            tabData = listData[tabKey].data;
+            this.topicListData[tabKey] = listData[tabKey];
+            console.log('prependData: ', tabData);
+        }else {
+            /**
+             * append data
+             */
+            tabData = this.topicListData[tabKey].data.concat(listData[tabKey].data);
+            this.topicListData[tabKey].data = tabData;
+            console.log('append data: ', this.topicListDataParam, tabData);
+        }
+        this.status.isTopRefresh = null;
+        this.setState({
+            dataSource: this.dataSource.cloneWithRows(tabData)
+        });
+    }
+
+    /**
+     * 下拉刷新数据
+     */
+    prependData () {
+        let type = this.state.currentTabName;
+        this.props.fetchData(type, {tab: type, page: 1});
+    }
+
+    /**
+     * 滚动加载数据
+     */
+    appendData () {
+        let type = this.state.currentTabName;
+        let pageNum = this.topicListDataParam[this.state.currentTabName].pageNum + 1;
+        this.topicListDataParam[this.state.currentTabName].pageNum = pageNum;
+        this.props.fetchData(type, {tab: type, page: pageNum});
+    }
+
+    clearData () {
+
+    }
+
+    /**
+     * 是否在请求当前列表数据
+     */
+    isFetchingData (data) {
+        let isLoading = false;
+        if (data&&data[this.state.currentStoreTabKey].status === 'fetching') {
+            isLoading = true;
+        }
+        this.setState({isLoading: isLoading});
+    }
+
+    /**
+     * @private
+     * top refreshing
+     */
+    
+    _onRefresh = () => {
+        this.status.isTopRefresh = true;
+        this.props.fetchData(this.state.currentTabName);
+    }
+
+    /**
+     * @private
+     * bottom refreshing
+     */
+    _onEndReached = () => {
+        /**
+         * 大于100或小于20的情况不再请求数据
+         */
+        if (this.state.isLoading) {
+            return ;
+        }
+
+        let listData = this.topicListData[this.state.currentStoreTabKey].data;
+        let length = listData.length;
+        let type = this.state.currentTabName;
+        if (length < MIN_LIST || length > MAX_LIST) {
+            console.warn('the list length is ' + length + '!');
+            return ;
+        }
+        this.status.isTopRefresh = false;
+        this.appendData();
     }
 
     componentDidMount () {
     }
 
-    componentWillUnmount () {
-    }
-
     componentWillReceiveProps (nextProps) {
+        /**
+         * 成功加载topics数据
+         */
+        if (!this.status.hasRenderList&&nextProps.data[topicKeys[0]].data.length) {
+            this.topicListData = nextProps.data;
+            this.initListData(nextProps);
+        }
+        /**
+         * 首次加载完所有类型的数据数据
+         */
+        if (!this.status.hasRenderList
+            &&nextProps.data[topicKeys[0]].data.length
+            &&nextProps.data[topicKeys[1]].data.length
+            &&nextProps.data[topicKeys[2]].data.length
+            &&nextProps.data[topicKeys[3]].data.length) {
+            this.status.hasRenderList = true;
+            this.topicListData = nextProps.data;
+        }  
+
+        this.isFetchingData(nextProps.data); 
         if (nextProps.data) {
-            let fetchData = nextProps.data;
-            let currentStoreTabKey = this.state.currentStoreTabKey;
-
-            let newData = [];
-            if (this.state.isTopRefresh === true && fetchData[currentStoreTabKey][0] && this.state.currentTabData[0]) {
-                let firstTopicId = fetchData[currentStoreTabKey][0].id;
-                let currentFirstTopicId = this.state.currentTabData[0].id;
-
-                if (firstTopicId&&currentFirstTopicId&&firstTopicId!=currentFirstTopicId) {
-                    newData = newData.concat(fetchData[currentStoreTabKey].data, this.state.currentTabData.data);
-                }
-
-                fetchData[currentStoreTabKey].data = newData;
-                console.log('----------------',this.state.currentTabName, newData);
-            } else if (this.state.isTopRefresh === false && this.state.currentTabData.length >= MIN_LIST) {
-                newData = newData.concat(this.state.currentTabData.data, fetchData[currentStoreTabKey].data);
-                fetchData[currentStoreTabKey].data = newData;
-                console.log('----------------',this.state.currentTabName, newData);
+            if (this.status.isTopRefresh === true) {
+                this.updateListData(true, nextProps.data);
+            } else if(this.status.isTopRefresh === false&&this.state.hasTopic&&this.status.hasRenderList) {
+                this.updateListData(false, nextProps.data);                
             }
-
-            console.log('currentTabData: ', this.state.currentTabData, newData);
-            console.log('nextProps: ',nextProps.data, this.state);
-            this.setState({
-                tabData: fetchData,
-                isTopRefresh: null,
-                count: this.state.count + 1
-            })
-            this.initRowData(fetchData[currentStoreTabKey]);
         }
     }
 
@@ -245,14 +310,13 @@ export default class TopicComponent extends Component {
         }
         this.setState({
             currentTabName: type,
-            currentTabData: this.state.tabData[tabData],
-            currentStoreTabKey: tabData
+            currentStoreTabKey: tabData,
+            dataSource: this.dataSource.cloneWithRows(this.topicListData[tabData].data)
         })
-        this.initRowData(this.state.tabData[tabData]);
     }
 
     rowPress = (id, sid, row) => {
-        let data = this.state.currentTabData.data[row];
+        let data = this.topicListData[this.state.currentStoreTabKey].data[row];
         this.props.navigator.push({
             title: "文章",
             id: 'topic',
@@ -273,7 +337,7 @@ export default class TopicComponent extends Component {
                         <Image style={styles.thumb} source={{uri:rowData.author.avatar_url}} />
                         <View style={styles.contentContainer}>
                             <Text numberOfLines={1} style={styles.title}>{rowData.title}</Text>
-                            <Text numberOfLines={1} style={styles.author}>{rowData.author.loginname}</Text>
+                            <Text numberOfLines={1} style={styles.author}>{rowData.author.loginname + ' 浏览' + rowData.visit_count + '次'}</Text>
                         </View>
                     </View>
                 </View>
@@ -285,49 +349,25 @@ export default class TopicComponent extends Component {
      * Loading animation
      */
     renderLoading () {
-        return this.state.isLoading ? (<ActivityIndicator size='large'/>) : (<View/>);
-    }
-
-    /**
-     * @private
-     * top refreshing
-     */
-    
-    _onRefresh = () => {
-        this.props.fetchData(this.state.currentTabName);
-    }
-
-    /**
-     * @private
-     * bottom refreshing
-     */
-    _onEndReached = () => {
-        /**
-         * 大于100或小于20的情况不再请求数据
-         */
-        let listData = this.state.currentTabData.data;
-        let length = listData.length;
-        let type = this.state.currentTabName;
-
-        let tabParams = this.state.tabParams;
-        let pageNum = ++tabParams[type]['pageNum'];
-        this.setState({
-            tabParams: tabParams
-        })
-        
-        this.setState({isTopRefresh: false}, ()=>{
-            if (length >= MIN_LIST && length <= MAX_LIST) {
-                this.props.fetchData(type, {tab: type, page: pageNum});
-            } 
-        });
+        return this.state.isLoading ? (<ActivityIndicator style={{height: 60}} size='small'/>) : (<View/>);
     }
 
     render () {
-        if (!this.state.hasTopic && !this.state.isLoading && !this.state.hasRenderList) {
+        console.log(this.state.isLoading, this.status.hasRenderList)
+        if (!this.state.hasTopic&&!this.state.isLoading) {
             return (<View style={[styles.container,styles.emptyContainer]}>
                 <Text style={styles.text}>暂无数据!</Text>
             </View>)
         } 
+
+        if (this.state.isLoading&&this.status.isTopRefresh==null) {
+            return (
+                <View style={styles.container}>
+                    {this.renderLoading()}
+                </View>
+                )
+        }
+
         return(
             <View style={styles.container}>
                 <View style={styles.separator} />
@@ -353,7 +393,7 @@ export default class TopicComponent extends Component {
                                 progressBackgroundColor="#ffff00"
                               />
                         }
-                        onEndReachedThreshold={100}
+                        onEndReachedThreshold={50}
                         onEndReached={this._onEndReached}
                         />
                     <ListView
@@ -361,28 +401,60 @@ export default class TopicComponent extends Component {
                         tabLabel='精华'
                         style={styles.listViewContainer}
                         dataSource={this.state.dataSource}
-                        renderRow={this.renderRow} />
+                        renderRow={this.renderRow}
+                        refreshControl={
+                              <RefreshControl
+                                refreshing={this.state.isLoading}
+                                onRefresh={this._onRefresh}
+                                tintColor="#eee"
+                                colors={['#ff0000', '#00ff00', '#0000ff']}
+                                progressBackgroundColor="#ffff00"
+                              />
+                        }
+                        onEndReachedThreshold={50}
+                        onEndReached={this._onEndReached}
+                        />
                     <ListView
                         enableEmptySections={true}
                         tabLabel='分享'
                         style={styles.listViewContainer}
                         dataSource={this.state.dataSource}
-                        renderRow={this.renderRow} />
+                        renderRow={this.renderRow} 
+                        refreshControl={
+                              <RefreshControl
+                                refreshing={this.state.isLoading}
+                                onRefresh={this._onRefresh}
+                                tintColor="#eee"
+                                colors={['#ff0000', '#00ff00', '#0000ff']}
+                                progressBackgroundColor="#ffff00"
+                              />
+                        }
+                        onEndReachedThreshold={50}
+                        onEndReached={this._onEndReached}
+                        />
                     <ListView
                         enableEmptySections={true}
                         tabLabel='招聘'
                         style={styles.listViewContainer}
                         dataSource={this.state.dataSource}
-                        renderRow={this.renderRow} />
+                        renderRow={this.renderRow} 
+                        refreshControl={
+                              <RefreshControl
+                                refreshing={this.state.isLoading}
+                                onRefresh={this._onRefresh}
+                                tintColor="#eee"
+                                colors={['#ff0000', '#00ff00', '#0000ff']}
+                                progressBackgroundColor="#ffff00"
+                              />
+                        }
+                        onEndReachedThreshold={50}
+                        onEndReached={this._onEndReached}
+                        />
                 </ScrollableTabView>
                 {
                     (()=>{
-                        if (this.state.isLoading&&!this.state.hasRenderList) {
-                            return (
-                                <View style={styles.container}>
-                                    { this.renderLoading() }
-                                </View>
-                            )
+                        if (this.state.isLoading) {
+                            return this.renderLoading();
                         }
                     })()
                 }
