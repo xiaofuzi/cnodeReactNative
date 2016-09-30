@@ -7,11 +7,10 @@ import {
   TabBarIOS
 } from 'react-native';
 
+import { connect } from 'react-redux';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import HomePage from '../app/homePage.js';
-//import MessagePage from '../app/messagePage.js';
-import PersonalPage from '../app/personalPage.js';
+import Router from '../app/routes.js';
 
 const styles = StyleSheet.create({
     container: {
@@ -21,7 +20,7 @@ const styles = StyleSheet.create({
 
 const TabBarNames = ['首页', '消息', '个人'];
 
-export default class App extends Component {
+class App extends Component {
     constructor (props) {
         super(props);
 
@@ -49,7 +48,7 @@ export default class App extends Component {
                             selectedTab: TabBarNames[0]
                         })
                     }}>
-                    <HomePage style={styles.container} />
+                    <Router param={{id: 'home', title: '首页'}} {...this.props}/>
                 </Icon.TabBarItemIOS>
                 <Icon.TabBarItemIOS
                     title={TabBarNames[1]}
@@ -61,7 +60,7 @@ export default class App extends Component {
                             selectedTab: TabBarNames[1]
                         })
                     }}>
-                    <HomePage />
+                    <Router param={{id: 'home', title: '首页'}} {...this.props}/>
                 </Icon.TabBarItemIOS>
                 <Icon.TabBarItemIOS
                     title={TabBarNames[2]}
@@ -73,11 +72,14 @@ export default class App extends Component {
                             selectedTab: TabBarNames[2]
                         })
                     }}>
-                    <PersonalPage />
+                    <Router param={{id: 'me', title: '个人'}} {...this.props}/>
                 </Icon.TabBarItemIOS>
             </TabBarIOS>
             )
     }
 }
 
+export default connect((state)=>{
+    return {...state};
+})(App)
 

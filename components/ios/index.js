@@ -9,7 +9,7 @@ import {
  */
 import store from '../store/configureStore.js';
 
-import App from './app.js';
+import AppComponent from './appTab.js';
 
 const styles = StyleSheet.create({
     container: {
@@ -23,7 +23,7 @@ export default class IndexApp extends Component {
     render () {
         return (
             <Provider store={store}>
-                <App />
+                <AppComponent />
             </Provider>
             )
     }

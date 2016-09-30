@@ -16,13 +16,13 @@ import {
 } from 'react-native';
 
 import ScrollableTabView, {DefaultTabBar, } from 'react-native-scrollable-tab-view';
-
 import moment from 'moment';
+
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        marginTop: 65,
+        marginTop: 64,
         paddingBottom: 48,
         backgroundColor: '#ffffff'
     },
@@ -261,6 +261,7 @@ export default class TopicComponent extends Component {
     }
 
     componentWillReceiveProps (nextProps) {
+        console.log('nextProps: ', nextProps.data);
         /**
          * 成功加载topics数据
          */

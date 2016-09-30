@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 /**
  * fetch data
  */
@@ -19,7 +21,11 @@ export function ajaxFetch(url, option={}){
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
             },
-            body: option.data = {}
+            body: JSON.stringify(option.data)
         }).then(res=>res.json());
     }
+}
+
+export function isIOS () {
+    return Platform.OS === 'ios';
 }

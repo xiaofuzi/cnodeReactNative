@@ -14,14 +14,17 @@ import {
 
 import Icon from 'react-native-vector-icons/Ionicons';
 
+import LoginComponent from './user/loginComponent.js';
+
 const ICON_SIZE = 24;
 const styles = StyleSheet.create({
   container: {
+    marginTop: 64,
     backgroundColor: '#F0EFF5',
     flex: 1,
   },
   userTouch: {
-    marginTop: 20,
+    marginTop: 10,
   },
   user: {
     padding: 8,
@@ -70,17 +73,38 @@ const styles = StyleSheet.create({
 class PersonalPageComponent extends Component {
     constructor (props) {
         super(props);
+
+        this.state = {
+          isLogined: false,
+          loginInfo: {}
+        }
+    }
+
+    componentWillReceiveProps (nextProps) {
+        console.log('me', nextProps)
+        if (nextProps.userData.loginInfo.success) {
+            this.setState({
+                isLogined: true,
+                loginInfo: nextProps.userData.loginInfo
+            })
+        }
     }
 
     render () {
-        let top = 65;
+        let top = 64;
         let stateColor = 'green';
+
+        if (!this.state.isLogined) {
+            return (
+                    <View
+                    style={[styles.container, {marginTop: top}]}
+                    >
+                    <LoginComponent {...this.props} />
+                    </View>)
+        }
         return (
             <ScrollView
                 style={[styles.container, {marginTop: top}]}
-                automaticallyAdjustContentInsets={false}
-                contentInset={{top: 64, left: 0, bottom: 49, right: 0}}
-                contentOffset={{x:0, y:-64}}
                 >
                 <TouchableHighlight
                   underlayColor={'gray'}
@@ -88,18 +112,17 @@ class PersonalPageComponent extends Component {
                   onPress={() => this.props.navigator.push({id: 'user', obj: user})}>
                   <View style={styles.user}>
                     <Image
-                      source={{uri: 'https://avatars.githubusercontent.com/u/1147375?v=3&s=120'}}
+                      source={{uri: this.state.loginInfo.avatar_url}}
                       style={styles.avatar}
                       />
                     <View style={styles.nameInfo}>
                       <Text style={styles.name}>
-                        username
+                        {this.state.loginInfo.username}
                       </Text>
                     </View>
                     <Text
                       style={[styles.loginState, {color: stateColor}]}
                       onPress={this.pressLogin}>
-                      stateText
                     </Text>
                     <Icon
                       name='ios-arrow-forward'
@@ -107,7 +130,6 @@ class PersonalPageComponent extends Component {
                       />
                     </View>
                 </TouchableHighlight>
-                <WebView style={{height: 500}} source={{uri: 'https://cnodejs.org/topic/57e38981c1760d1f0e4d698e'}}/>
               </ScrollView>
             )
     }

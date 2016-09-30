@@ -11,15 +11,39 @@ export const FETCH_JOB_TOPIC = 'FETCH_JOB_TOPIC';
 //initial state
 export const TOPIC_STATE = {
     topics: {
-        status: 'toFetch'
+        status: 'toFetch',
+        data: []
     },
     goodTopics: {
-        status: 'toFetch'
+        status: 'toFetch',
+        data: []
     },
     shareTopics: {
-        status: 'toFetch'
+        status: 'toFetch',
+        data: []
     },
     jobTopics: {
-        status: 'toFetch'
+        status: 'toFetch',
+        data: []
     }
 };
+
+
+/**
+ * user action params
+ */
+export const USER_STATE = {
+    accesstokenInfo: {
+        success: false,
+        loginname: '不存在'
+    },
+    loginInfo: {
+        loginStatus: 'logout',
+        username: '',
+        accesstoken: ''
+    }
+}
+
+export const GET_USER_LOGIN_INFO = 'GET_USER_LOGIN_INFO';
+export const VALID_ACCESS_TOEKN = 'VALID_ACCESS_TOEKN';
+export const FETCH_ACCESS_TOKEN = 'FETCH_ACCESS_TOKEN';

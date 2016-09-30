@@ -22,33 +22,36 @@ const styles = StyleSheet.create({
     },
     webView: {
         flex: 1,
-        marginTop: 65,
+        marginTop: 64,
         marginBottom: 48
     }
 });
 
 const URL_PRE = 'https://cnodejs.org/topic/';
+const WEB_VIEW = 'WEB_VIEW';
 
 const topicPageRenderJS = `
     ;(function topicRender(){
-        try {
-            [].slice.call(document.querySelectorAll('body > div')).forEach(function(el){
-                el.style.display = 'none';
-            });
-            document.querySelector('#main').style.display = 'block';
-            [].slice.call(document.querySelectorAll('#main > div')).forEach(function(el){
-                el.style.display = 'none';
-            });
-            document.querySelector('#content').style.display = 'block';
-            document.querySelector('#content').style.marginRight = '0px';
-            document.querySelector('#main').style.display = 'block';
-            [].slice.call(document.querySelectorAll('#content > div')).forEach(function(el, index){
-                if (index) {
+        if (window.location.href.indexOf('https://cnodejs.org/topic/') == 0) {
+            try {
+                [].slice.call(document.querySelectorAll('body > div')).forEach(function(el){
                     el.style.display = 'none';
-                }
-            });
-        } catch (e) {
-            alert(e)
+                });
+                document.querySelector('#main').style.display = 'block';
+                [].slice.call(document.querySelectorAll('#main > div')).forEach(function(el){
+                    el.style.display = 'none';
+                });
+                document.querySelector('#content').style.display = 'block';
+                document.querySelector('#content').style.marginRight = '0px';
+                document.querySelector('#main').style.display = 'block';
+                [].slice.call(document.querySelectorAll('#content > div')).forEach(function(el, index){
+                    if (index) {
+                        el.style.display = 'none';
+                    }
+                });
+            } catch (e) {
+                console.log(e)
+            }
         }
     })();
 `;
@@ -58,7 +61,9 @@ export default class extends Component {
 
         this.state = {
             isAUrl: false,
-            url: ''
+            url: '',
+            backAble: false,
+            forwardAble: false
         }
     }
 
@@ -74,13 +79,17 @@ export default class extends Component {
      * update url 
      */
     updateUrlParams (data) {
-        console.log(data)
         if (data) {
             this.setState({
                 url: URL_PRE + data.id,
                 isAUrl: true
             });
         }
+    }
+
+    onNavigationStateChange = (e) => {
+        console.log('onNavigationStateChange', e)
+        this.props.onWebNavChange(e, this);
     }
 
     componentDidMount () {
@@ -94,17 +103,21 @@ export default class extends Component {
         }
     }
 
+    goBack = () => {
+        this.refs[WEB_VIEW].goBack();
+    }
+
     renderLoading = () => {
         if (Platform.OS === 'android') {
           return (
             <View style={styles.container}>
-              <ProgressBarAndroid styleAttr="Inverse" style='Large'/>
+              <ProgressBarAndroid styleAttr="Inverse" style='small'/>
             </View>
           )
         } else if (Platform.OS === 'ios') {
           return (
             <View style={styles.container}>
-              <ActivityIndicator size="large" />
+              <ActivityIndicator size="small" />
             </View>
           );
         }
@@ -125,15 +138,18 @@ export default class extends Component {
 
         return (
             <View style={styles.container}>
-                <WebView 
+                <WebView
+                    ref={WEB_VIEW} 
                     style={styles.webView}
                     source={{uri: this.state.url}}
                     injectedJavaScript={topicPageRenderJS}
                     automaticallyAdjustContentInsets={false}
                     renderLoading={this.renderLoading}
                     renderError={this.renderError}
+                    onNavigationStateChange={this.onNavigationStateChange}
                     javaScriptEnabled={true}
                     startInLoadingState={true}
+                    contentInset={{top:0, left:0, bottom: 0, right: 0}}
                     ></WebView>
             </View>
             )

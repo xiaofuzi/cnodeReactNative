@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import { connect } from 'react-redux';
 import Icon from'react-native-vector-icons/Ionicons';
 
 import {
@@ -15,9 +14,7 @@ import {
   TouchableOpacity
 } from 'react-native';
 
-import Router from './routes.js';
 import TopicComponent from './topic/topic.js';
-import DetailTopicComponent from './topic/webTopicDetail.js';
 
 /**
  * actions
@@ -31,88 +28,7 @@ function isIOS () {
     return Platform.OS === 'ios';
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1
-    },
-    button: {
-        padding: 15,
-    },
-    containView:{
-        flex: 1,
-        justifyContent: 'center',
-    },
-    blackText:{
-        fontSize:20,
-        textAlign:'center',
-    },
-    navBar: {
-        backgroundColor: '#ffffff'
-    },
-    navBarText: {
-        fontSize: 16,
-        marginVertical: 10
-    },
-    navBarTitleText: {
-        color: '#373E4D',
-        fontWeight: '500',
-        marginVertical: 9,
-    },
-    navBarLeftButton: {
-        paddingLeft: 10,
-    },
-    navBarRightButton: {
-        paddingRight: 10,
-    },
-    navBarButtonText: {
-        color: '#5890FF',
-    }
-});
-
-
-const NavigationBarRouteMapper = {
-    LeftButton: function (route, navigator, index, navState) {
-        if (index === 0) {
-            return null;
-        } 
-
-        let previousRoute = navState.routeStack[index-1];
-        return (
-          <TouchableOpacity
-            onPress={()=>navigator.pop()}
-            style={styles.navBarLeftButton}>
-            <Icon
-              name='ios-arrow-back'
-              size={30}
-              style={{marginTop: 8}}
-            />
-          </TouchableOpacity>
-        )
-    },
-    Title: function (route, navigator, index, navState) {
-        return (
-           <Text style={[styles.navBarText, styles.navBarTitleText]}>
-             {route.title}
-           </Text>
-         );
-    },
-    RightButton: function (route, navigator, index, navState) {
-        if (true) {
-           return null;
-         }
-         return (
-           <TouchableOpacity
-             onPress={() => navigator.push({id:'detail',title:'Detail'})}
-             style={styles.navBarRightButton}>
-             <Text style={[styles.navBarText, styles.navBarButtonText]}>
-               Next
-             </Text>
-           </TouchableOpacity>
-         );
-    }
-};
-
-class HomePage extends Component {
+export default class HomePage extends Component {
     constructor (props) {
         super(props);
 
@@ -137,55 +53,15 @@ class HomePage extends Component {
         dispatch(fetchTopics(param, type));
     }
 
-    renderIOS () {
-        return (
-            <Navigator 
-                style={styles.navigator}
-                initialRoute={{
-                    id: 'home',
-                    title: '首页'
-                }}
-                renderScene={this.renderScene}
-                navigationBar={
-                    <Navigator.NavigationBar
-                        routeMapper={NavigationBarRouteMapper}
-                        style={styles.navBar}
-                    />
-                }
-            />
-            )
-    }
-
-    renderScene = (route, navigator) => {
-        let data = this.props.topicData || {};
-        switch (route.id) {
-            case 'home':
-                return (<TopicComponent data={data} fetchData={this.fetchData} navigator={navigator} title="首页" />)
-                break;
-            case 'topic':
-              return (<DetailTopicComponent detailData={route.detailData} />)
-        }
-
-        return null;
+    componentWillReceiveProps (nextProps) {
+        console.log('nextProps: ', nextProps);
     }
 
     render () {
         return (
-            <View style={styles.container}>
-                {
-                    (()=>{
-                        if (isIOS()) {
-                            return this.renderIOS();
-                        }else {
-
-                        }
-                    })()
-                }
+            <View style={{flex: 1}}>
+                <TopicComponent data={this.props.topicData} fetchData={this.fetchData} navigator={this.props.navigator}/>
             </View>
             )
     }
 }
-
-export default connect((state)=>{
-    return {...state}
-})(HomePage);
